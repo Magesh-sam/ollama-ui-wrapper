@@ -16,7 +16,7 @@ import {
 import { ChevronDown } from "lucide-react"
 
 export function ModelsDropdown({ models }: { models: string[] }) {
-  const [position, setPosition] = React.useState("bottom")
+  const [position, setPosition] = React.useState("");
 
   return (
     <DropdownMenu>

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react"
 import PromptBox from "./components/PromptBox"
+import { api } from "./lib/utils"
 
 export function App() {
   const [AIModels, setAIModels] = useState<string[]>([])
+
   useEffect(() => {
     const fetchModels = async () => {
-      const res = await fetch("http://localhost:11434/api/tags")
-      const tags = await res.json()
+      const res = await api.get("/tags")
+      const tags =  res.data;
       const { models } = tags
 
       const modelsNames = models.map(
