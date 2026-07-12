@@ -5,7 +5,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "./ui/button";
 import { ModelsDropdown } from "./ModelsDropdown";
 
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 function PromptBox({ models }: { models: string[] }) {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [promptText, setPromptText] = useState("");
   const [text, setText] = useState("");
 
@@ -14,26 +20,33 @@ function PromptBox({ models }: { models: string[] }) {
 
     if (!promptText.trim()) return;
 
+    const userMessage: Message = {
+      role: "user",
+      content: promptText,
+    };
+
+    const updatedMessages = [...messages, userMessage];
+
+    setMessages(updatedMessages);
+    setPromptText("");
     setText("");
 
-    await streamResponse(promptText);
-
-    setPromptText("");
+    await chatStream(updatedMessages);
   };
 
-  const streamResponse = async (prompt: string) => {
+  const chatStream = async (messages: Message[]) => {
     try {
-      const res = await fetch("http://localhost:11434/api/generate", {
+      const res = await fetch("http://localhost:11434/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           model: "mistral",
-          prompt,
+          messages,
+          stream: true,
         }),
       });
-
 
       if (!res.body) {
         console.error("No response body");
@@ -44,20 +57,14 @@ function PromptBox({ models }: { models: string[] }) {
       const decoder = new TextDecoder();
 
       let buffer = "";
+      let assistantResponse = "";
 
       while (true) {
         const { done, value } = await reader.read();
 
-        if (done) {
-          console.log("STREAM FINISHED");
-          break;
-        }
+        if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-
-        console.log("RAW CHUNK:", chunk);
-
-        buffer += chunk;
+        buffer += decoder.decode(value, { stream: true });
 
         const lines = buffer.split("\n");
         buffer = lines.pop() ?? "";
@@ -68,16 +75,12 @@ function PromptBox({ models }: { models: string[] }) {
           try {
             const json = JSON.parse(line);
 
-            console.log("JSON:", json);
+            const chunk = json.message?.content ?? "";
 
-            setText(prev => {
-              const next = prev + json.response;
-              console.log("UPDATED:", next);
-              return next;
-            });
+            assistantResponse += chunk;
+            setText(assistantResponse);
           } catch (err) {
-            console.error("PARSE ERROR:", err);
-            console.log("BAD LINE:", line);
+            console.error(err);
           }
         }
       }
@@ -85,23 +88,35 @@ function PromptBox({ models }: { models: string[] }) {
       if (buffer.trim()) {
         try {
           const json = JSON.parse(buffer);
-
-          setText(prev => prev + json.response);
-        } catch (err) { console.log(err) }
+          const chunk = json.message?.content ?? "";
+          assistantResponse += chunk;
+          setText(assistantResponse);
+        } catch(err){
+          console.log(err)
+        }
       }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: assistantResponse,
+        },
+      ]);
     } catch (err) {
       console.error(err);
     }
   };
 
+  console.log(messages);
+
   return (
     <div className="mx-auto max-w-2xl p-6">
-      {
-        text &&
-        <div className="mb-6 min-h-32 rounded border p-4 whitespace-pre-wrap">
+      {text && (
+        <div className="mb-6 min-h-32 max-h-40 overflow-y-auto rounded border p-4 whitespace-pre-wrap">
           {text}
         </div>
-      }
+      )}
 
       <form
         className="relative mx-auto w-md max-w-md"
@@ -110,7 +125,7 @@ function PromptBox({ models }: { models: string[] }) {
         <Textarea
           value={promptText}
           onChange={(e) => setPromptText(e.target.value)}
-          className="min-h-30 w-full resize-none p-5  shadow-[0_8px_30px_rgb(0,0,0,0.12)] focus:shadow-[0_8px_30px_var(--color-primary)]/35"
+          className="min-h-30 w-full resize-none p-5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] focus:shadow-[0_8px_30px_var(--color-primary)]/35"
         />
 
         <div className="absolute bottom-3 right-3 flex items-center gap-2">
