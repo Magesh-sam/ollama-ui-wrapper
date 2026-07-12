@@ -1,40 +1,44 @@
-import { useEffect, useState } from "react"
-import PromptBox from "./components/PromptBox"
-import { api } from "./lib/utils"
+import { useEffect, useState } from "react";
+import PromptBox from "./components/PromptBox";
+import { api } from "./lib/utils";
 
 export function App() {
-  const [AIModels, setAIModels] = useState<string[]>([])
+  const [AIModels, setAIModels] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchModels = async () => {
-      const res = await api.get("/tags")
-      const tags =  res.data;
-      const { models } = tags
+      const res = await api.get("/tags");
+      const { models } = res.data;
 
-      const modelsNames = models.map(
-        (model: { name: string }) => model.name.split(":")[0]
-      )
-      setAIModels(modelsNames)
-    }
+      setAIModels(
+        models.map((model: { name: string }) => model.name.split(":")[0])
+      );
+    };
 
-    fetchModels()
-  }, [])
+    fetchModels();
+  }, []);
 
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center">
-      <img
-        src="/ollama.png"
-        alt="Ollama Logo"
-        width={"75"}
-        height={"75"}
-        className="mx-auto block"
-      />
-      <h1 className="my-3 text-center text-3xl font-extrabold text-primary uppercase">
-        Ollama UI Wrapper
-      </h1>
-      <PromptBox models={AIModels} />
+    <main className="mx-auto flex max-h-screen w-full max-w-4xl flex-col">
+      <div className="flex flex-1 flex-col">
+        <img
+          src="/ollama.png"
+          alt="Ollama Logo"
+          width={75}
+          height={75}
+          className="mx-auto mt-8"
+        />
+
+        <h1 className="my-3 text-center text-3xl font-extrabold uppercase text-primary">
+          Ollama UI Wrapper
+        </h1>
+
+        <div className="">
+          <PromptBox models={AIModels} />
+        </div>
+      </div>
     </main>
-  )
+  );
 }
 
-export default App
+export default App;

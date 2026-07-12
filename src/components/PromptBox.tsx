@@ -4,6 +4,7 @@ import { ArrowUpIcon } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "./ui/button";
 import { ModelsDropdown } from "./ModelsDropdown";
+import ChatMessages from "./ChatMessages";
 
 type Message = {
   role: "user" | "assistant";
@@ -13,7 +14,6 @@ type Message = {
 function PromptBox({ models }: { models: string[] }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [promptText, setPromptText] = useState("");
-  const [text, setText] = useState("");
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,13 +29,20 @@ function PromptBox({ models }: { models: string[] }) {
 
     setMessages(updatedMessages);
     setPromptText("");
-    setText("");
 
     await chatStream(updatedMessages);
   };
 
   const chatStream = async (messages: Message[]) => {
     try {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "",
+        },
+      ]);
+
       const res = await fetch("http://localhost:11434/api/chat", {
         method: "POST",
         headers: {
@@ -48,10 +55,7 @@ function PromptBox({ models }: { models: string[] }) {
         }),
       });
 
-      if (!res.body) {
-        console.error("No response body");
-        return;
-      }
+      if (!res.body) return;
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -78,7 +82,17 @@ function PromptBox({ models }: { models: string[] }) {
             const chunk = json.message?.content ?? "";
 
             assistantResponse += chunk;
-            setText(assistantResponse);
+
+            setMessages((prev) => {
+              const updated = [...prev];
+
+              updated[updated.length - 1] = {
+                role: "assistant",
+                content: assistantResponse,
+              };
+
+              return updated;
+            });
           } catch (err) {
             console.error(err);
           }
@@ -88,52 +102,54 @@ function PromptBox({ models }: { models: string[] }) {
       if (buffer.trim()) {
         try {
           const json = JSON.parse(buffer);
-          const chunk = json.message?.content ?? "";
-          assistantResponse += chunk;
-          setText(assistantResponse);
-        } catch(err){
-          console.log(err)
+
+          assistantResponse += json.message?.content ?? "";
+
+          setMessages((prev) => {
+            const updated = [...prev];
+
+            updated[updated.length - 1] = {
+              role: "assistant",
+              content: assistantResponse,
+            };
+
+            return updated;
+          });
+        } catch (err) {
+          console.error(err);
         }
       }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: assistantResponse,
-        },
-      ]);
     } catch (err) {
       console.error(err);
     }
   };
 
-  console.log(messages);
-
   return (
-    <div className="mx-auto max-w-2xl p-6">
-      {text && (
-        <div className="mb-6 min-h-32 max-h-40 overflow-y-auto rounded border p-4 whitespace-pre-wrap">
-          {text}
-        </div>
-      )}
+    <div className="relative max-h-screen bg-background">
+      {/* Scrollable chat */}
+      <div className=" overflow-y-auto pb-52">
+        <ChatMessages messages={messages} />
+      </div>
 
+      {/* Fixed input */}
       <form
-        className="relative mx-auto w-md max-w-md"
         onSubmit={handleSubmit}
+        className="fixed bottom-0 left-0 right-0 border-t bg-background/95 px-6 py-6 backdrop-blur"
       >
-        <Textarea
-          value={promptText}
-          onChange={(e) => setPromptText(e.target.value)}
-          className="min-h-30 w-full resize-none p-5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] focus:shadow-[0_8px_30px_var(--color-primary)]/35"
-        />
+        <div className="relative mx-auto max-w-2xl">
+          <Textarea
+            value={promptText}
+            onChange={(e) => setPromptText(e.target.value)}
+            className="min-h-28 w-full resize-none p-5 shadow-[0_8px_30px_rgb(0,0,0,0.12)] focus:shadow-[0_8px_30px_var(--color-primary)]/35"
+          />
 
-        <div className="absolute bottom-3 right-3 flex items-center gap-2">
-          <ModelsDropdown models={models} />
+          <div className="absolute bottom-3 right-3 flex items-center gap-2">
+            <ModelsDropdown models={models} />
 
-          <Button type="submit" size="icon">
-            <ArrowUpIcon />
-          </Button>
+            <Button type="submit" size="icon">
+              <ArrowUpIcon />
+            </Button>
+          </div>
         </div>
       </form>
     </div>
