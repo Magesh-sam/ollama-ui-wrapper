@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,16 +14,25 @@ import {
 
 import { ChevronDown } from "lucide-react"
 
-export function ModelsDropdown({ models }: { models: string[] }) {
-  const [position, setPosition] = React.useState("");
+import { useModelStore } from "@/store/useModelStore"
+
+interface ModelsDropdownProps {
+  models: { name: string }[]
+}
+
+
+export function ModelsDropdown({ models }: ModelsDropdownProps) {
+
+
+  const model = useModelStore((state) => state.model)
+  const setModels = useModelStore((state) => state.setModel)
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
           <Button variant="outline">
-            {" "}
-            Models{" "}
+            {model ? model : "models"}
             <ChevronDown className="ml-2 h-4 w-4" data-icon="inline-end" />
           </Button>
         }
@@ -32,14 +40,14 @@ export function ModelsDropdown({ models }: { models: string[] }) {
       <DropdownMenuContent className="min-w-56">
         <DropdownMenuGroup>
           <DropdownMenuLabel>AI Models </DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={position} onValueChange={setPosition}>
-            {models.map((model: string) => (
+          <DropdownMenuRadioGroup value={model} onValueChange={setModels}>
+            {models.map((model) => (
               <DropdownMenuRadioItem
                 className="focus:bg-primary/10"
-                key={model}
-                value={model}
+                key={model.name}
+                value={model.name}
               >
-                {model}
+                {model.name.split(":")[0]}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>

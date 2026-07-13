@@ -5,15 +5,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "./ui/button";
 import { ModelsDropdown } from "./ModelsDropdown";
 import ChatMessages from "./ChatMessages";
+import { useModelStore } from "@/store/useModelStore";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
 };
 
-function PromptBox({ models }: { models: string[] }) {
+interface PromptBoxProps {
+  models: { name: string }[]
+}
+
+function PromptBox({ models }: PromptBoxProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [promptText, setPromptText] = useState("");
+  const model = useModelStore((state)=>state.model);
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -49,7 +55,7 @@ function PromptBox({ models }: { models: string[] }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "mistral",
+          model,
           messages,
           stream: true,
         }),
@@ -126,12 +132,10 @@ function PromptBox({ models }: { models: string[] }) {
 
   return (
     <div className="relative max-h-screen bg-background">
-      {/* Scrollable chat */}
       <div className=" overflow-y-auto pb-52">
         <ChatMessages messages={messages} />
       </div>
 
-      {/* Fixed input */}
       <form
         onSubmit={handleSubmit}
         className="fixed bottom-0 left-0 right-0 border-t bg-background/95 px-6 py-6 backdrop-blur"

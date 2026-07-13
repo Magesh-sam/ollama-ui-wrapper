@@ -3,7 +3,7 @@ import PromptBox from "./components/PromptBox";
 import { api } from "./lib/utils";
 
 export function App() {
-  const [AIModels, setAIModels] = useState<string[]>([]);
+  const [AIModels, setAIModels] = useState<{ name: string }[]>([]);
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -11,7 +11,7 @@ export function App() {
       const { models } = res.data;
 
       setAIModels(
-        models.map((model: { name: string }) => model.name.split(":")[0])
+        models.map((model: { name: string }) => model)
       );
     };
 
