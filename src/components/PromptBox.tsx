@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import { ModelsDropdown } from "./ModelsDropdown";
 import ChatMessages from "./ChatMessages";
 import { useModelStore } from "@/store/useModelStore";
+import { useChatStore } from "@/store/useChatStore"; // FUNCTIONALITY: Import the new chat store
 
 type Message = {
   role: "user" | "assistant";
@@ -17,7 +18,17 @@ interface PromptBoxProps {
 }
 
 function PromptBox({ models }: PromptBoxProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  // FUNCTIONALITY: Extract chat data and actions from the Zustand chat store
+  const chats = useChatStore((state) => state.chats);
+  const activeChatId = useChatStore((state) => state.activeChatId);
+  const addMessage = useChatStore((state) => state.addMessage);
+  const updateLastMessage = useChatStore((state) => state.updateLastMessage);
+  const createChat = useChatStore((state) => state.createChat);
+
+  // FUNCTIONALITY: Get messages list for the currently active chat
+  const activeChat = activeChatId ? chats[activeChatId] : null;
+  const messages = activeChat?.messages || [];
+
   const [promptText, setPromptText] = useState("");
   const model = useModelStore((state)=>state.model);
 
@@ -26,28 +37,42 @@ function PromptBox({ models }: PromptBoxProps) {
 
     if (!promptText.trim()) return;
 
+    // FUNCTIONALITY: Fallback to auto-select the first model if none is active
+    let currentModel = model;
+    if (!currentModel && models.length > 0) {
+      currentModel = models[0].name;
+      useModelStore.getState().setModel(currentModel);
+    }
+
+    // FUNCTIONALITY: If there is no active chat session, create one first
+    let currentChatId = activeChatId;
+    if (!currentChatId) {
+      currentChatId = createChat(currentModel);
+    }
+
     const userMessage: Message = {
       role: "user",
       content: promptText,
     };
 
-    const updatedMessages = [...messages, userMessage];
-
-    setMessages(updatedMessages);
+    // FUNCTIONALITY: Store user message in Zustand (persisting to localStorage)
+    addMessage(currentChatId, userMessage);
     setPromptText("");
 
-    await chatStream(updatedMessages);
+    // FUNCTIONALITY: Run the streaming response with the updated messages array
+    const updatedChat = useChatStore.getState().chats[currentChatId];
+    if (updatedChat) {
+      await chatStream(currentChatId, updatedChat.messages, currentModel);
+    }
   };
 
-  const chatStream = async (messages: Message[]) => {
+  const chatStream = async (chatId: string, messages: Message[], selectedModel: string) => {
     try {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "",
-        },
-      ]);
+      // FUNCTIONALITY: Initialize empty assistant message in Zustand
+      addMessage(chatId, {
+        role: "assistant",
+        content: "",
+      });
 
       const res = await fetch("http://localhost:11434/api/chat", {
         method: "POST",
@@ -55,7 +80,7 @@ function PromptBox({ models }: PromptBoxProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model,
+          model: selectedModel,
           messages,
           stream: true,
         }),
@@ -89,16 +114,8 @@ function PromptBox({ models }: PromptBoxProps) {
 
             assistantResponse += chunk;
 
-            setMessages((prev) => {
-              const updated = [...prev];
-
-              updated[updated.length - 1] = {
-                role: "assistant",
-                content: assistantResponse,
-              };
-
-              return updated;
-            });
+            // FUNCTIONALITY: Stream text updates directly into the Zustand store
+            updateLastMessage(chatId, assistantResponse);
           } catch (err) {
             console.error(err);
           }
@@ -111,16 +128,8 @@ function PromptBox({ models }: PromptBoxProps) {
 
           assistantResponse += json.message?.content ?? "";
 
-          setMessages((prev) => {
-            const updated = [...prev];
-
-            updated[updated.length - 1] = {
-              role: "assistant",
-              content: assistantResponse,
-            };
-
-            return updated;
-          });
+          // FUNCTIONALITY: Stream remaining buffer into the Zustand store
+          updateLastMessage(chatId, assistantResponse);
         } catch (err) {
           console.error(err);
         }
@@ -129,6 +138,7 @@ function PromptBox({ models }: PromptBoxProps) {
       console.error(err);
     }
   };
+
 
   return (
     <div className="relative max-h-screen bg-background">
