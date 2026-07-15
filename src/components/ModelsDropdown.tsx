@@ -32,7 +32,7 @@ export function ModelsDropdown({ models }: ModelsDropdownProps) {
       <DropdownMenuTrigger
         render={
           <Button variant="outline">
-            {model ? model : "models"}
+            {model ? model.split(":")[0] : "models"}
             <ChevronDown className="ml-2 h-4 w-4" data-icon="inline-end" />
           </Button>
         }
