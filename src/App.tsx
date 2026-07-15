@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import PromptBox from "./components/PromptBox";
 import { api } from "./lib/utils";
+import { useTheme } from "./components/theme-provider";
 
 export function App() {
   const [AIModels, setAIModels] = useState<{ name: string }[]>([]);
@@ -17,27 +18,25 @@ export function App() {
 
     fetchModels();
   }, []);
-
+  const { theme } = useTheme();
   return (
-    <main className="mx-auto flex max-h-screen w-full max-w-4xl flex-col">
-      <div className="flex flex-1 flex-col">
-        <img
-          src="/ollama.png"
-          alt="Ollama Logo"
-          width={75}
-          height={75}
-          className="mx-auto mt-8"
-        />
+    <div className="flex flex-1 flex-col">
+      <img
+        src={theme === "dark" ? "/ollama-dark.svg" : "/ollama.png"}
+        alt="Ollama Logo"
+        width={75}
+        height={75}
+        className="mx-auto mt-8 w-18.75 h-18.75 "
+      />
 
-        <h1 className="my-3 text-center text-3xl font-extrabold uppercase text-primary">
-          Ollama UI Wrapper
-        </h1>
+      <h1 className="my-3 text-center text-3xl font-extrabold uppercase text-primary">
+        Ollama UI Wrapper
+      </h1>
 
-        <div className="">
-          <PromptBox models={AIModels} />
-        </div>
+      <div className="">
+        <PromptBox models={AIModels} />
       </div>
-    </main>
+    </div>
   );
 }
 
