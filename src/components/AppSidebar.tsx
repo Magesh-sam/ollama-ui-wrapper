@@ -8,29 +8,31 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuAction, // FUNCTIONALITY: Import the built-in action container
-} from "@/components/ui/sidebar";
-import { MessageSquare, SquarePen, Trash2 } from "lucide-react";
-import { useChatStore } from "@/store/useChatStore";
-import { useModelStore } from "@/store/useModelStore";
-import { cn } from "@/lib/utils";
+} from "@/components/ui/sidebar"
+import { MessageSquare, SquarePen, Trash2 } from "lucide-react"
+import { useChatStore } from "@/store/useChatStore"
+import { useModelStore } from "@/store/useModelStore"
+import { cn } from "@/lib/utils"
 
 export function AppSidebar() {
   // FUNCTIONALITY: Hook into the Zustand store for chat history and selection
-  const chats = useChatStore((state) => state.chats);
-  const activeChatId = useChatStore((state) => state.activeChatId);
-  const setActiveChatId = useChatStore((state) => state.setActiveChatId);
-  const createChat = useChatStore((state) => state.createChat);
-  const deleteChat = useChatStore((state) => state.deleteChat);
+  const chats = useChatStore((state) => state.chats)
+  const activeChatId = useChatStore((state) => state.activeChatId)
+  const setActiveChatId = useChatStore((state) => state.setActiveChatId)
+  const createChat = useChatStore((state) => state.createChat)
+  const deleteChat = useChatStore((state) => state.deleteChat)
 
   // FUNCTIONALITY: Get currently active AI model to associate with new chats
-  const model = useModelStore((state) => state.model);
+  const model = useModelStore((state) => state.model)
 
   // FUNCTIONALITY: Convert chats map to an array sorted by creation date (newest first)
-  const chatList = Object.values(chats).sort((a, b) => b.createdAt - a.createdAt);
+  const chatList = Object.values(chats).sort(
+    (a, b) => b.createdAt - a.createdAt
+  )
 
   return (
     <Sidebar>
-      <SidebarHeader className="text-lg font-semibold px-4 py-3">
+      <SidebarHeader className="px-4 py-3 text-lg font-semibold">
         Chats
       </SidebarHeader>
 
@@ -39,8 +41,8 @@ export function AppSidebar() {
           <SidebarMenu>
             {/* FUNCTIONALITY: Wire up "New Chat" button to create a new session in Zustand */}
             <SidebarMenuItem>
-              <SidebarMenuButton 
-                className="hover:cursor-pointer" 
+              <SidebarMenuButton
+                className="hover:cursor-pointer"
                 onClick={() => createChat(model)}
               >
                 <SquarePen className="size-4" />
@@ -51,7 +53,7 @@ export function AppSidebar() {
             {/* FUNCTIONALITY: Render the real chat history from localStorage */}
             {chatList.map((chat) => (
               <SidebarMenuItem key={chat.id}>
-                <SidebarMenuButton 
+                <SidebarMenuButton
                   className={cn(
                     "flex-1 hover:bg-primary/10",
                     chat.id === activeChatId && "bg-primary/10 font-medium"
@@ -61,15 +63,15 @@ export function AppSidebar() {
                   <MessageSquare className="size-4" />
                   <span className="truncate">{chat.title}</span>
                 </SidebarMenuButton>
-                
+
                 {/* FUNCTIONALITY: Standard shadcn showOnHover action to delete the chat */}
                 <SidebarMenuAction
                   showOnHover
                   onClick={(e) => {
-                    e.stopPropagation();
-                    deleteChat(chat.id);
+                    e.stopPropagation()
+                    deleteChat(chat.id)
                   }}
-                  className="hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                  className="cursor-pointer hover:bg-destructive/10 hover:text-destructive"
                   title="Delete Chat"
                 >
                   <Trash2 className="size-3.5" />
@@ -82,6 +84,5 @@ export function AppSidebar() {
 
       <SidebarFooter />
     </Sidebar>
-  );
+  )
 }
-

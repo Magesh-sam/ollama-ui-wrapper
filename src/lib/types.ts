@@ -5,6 +5,6 @@ export interface AIModels {
 }
 
 export interface ModelStore {
-    model: string,
-    setModel: (model: string) => void
+  model: string
+  setModel: (model: string) => void
 }

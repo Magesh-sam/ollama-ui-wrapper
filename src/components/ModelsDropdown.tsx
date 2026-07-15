@@ -1,6 +1,5 @@
 "use client"
 
-
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -20,10 +19,7 @@ interface ModelsDropdownProps {
   models: { name: string }[]
 }
 
-
 export function ModelsDropdown({ models }: ModelsDropdownProps) {
-
-
   const model = useModelStore((state) => state.model)
   const setModels = useModelStore((state) => state.setModel)
 
