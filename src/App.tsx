@@ -10,15 +10,18 @@ export function App() {
   useEffect(() => {
     const fetchModels = async () => {
       try {
-        // FUNCTIONALITY: Check if the API is connectable by calling the tags endpoint
         const res = await api.get("/tags")
         const { models } = res.data
 
         setAIModels(models.map((model: { name: string }) => model))
       } catch (error) {
         console.error("Failed to connect to Ollama API:", error)
-        // FUNCTIONALITY: Raise a warning toast if the Ollama API is not running/accessible
         toast.error("Ollama Connection Failed", {
+          style: {
+            background: "red",
+            color: "white",
+          },
+          descriptionClassName: "!text-white opacity-90", // Forces the description to be white
           description:
             "Could not connect to Ollama on http://localhost:11434. Please ensure the service is running.",
           duration: 8000,
