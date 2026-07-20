@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner" // FUNCTIONALITY: Import Sonner
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider>
-      <SidebarProvider defaultOpen={false}>
+      <SidebarProvider defaultOpen>
         <AppSidebar />
         <ThemeProvider>
           <main className="relative mx-auto flex max-h-screen w-screen flex-col">
